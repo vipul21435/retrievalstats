@@ -315,6 +315,8 @@ comparison is unfair (the two runs' judged@10 differ by at most 0.002).
 - [evalstats](https://github.com/vipul21435/evalstats): error bars and paired comparisons for evaluations in
   general.
 - [recallmcp](https://github.com/vipul21435/recallmcp): Vipul Raj Jha's retrieval service.
+- [evalstop](https://github.com/vipul21435/evalstop): confidence sequences and sequential tests for stopping an evaluation early.
+- [rankstable](https://github.com/vipul21435/rankstable): how stable a leaderboard's order is to the averaging rule and the choice of benchmarks.
 
 ## References
 
