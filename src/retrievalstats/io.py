@@ -109,25 +109,30 @@ def _jsonl_rows(path: Path) -> Iterator[tuple[str, str, str, str]]:
         yield where, qid, doc, value
 
 
-def _tsv_rows(path: Path, header_check: str) -> Iterator[tuple[str, str, str, str]]:
+def _tsv_rows(path: Path) -> Iterator[tuple[str, str, str, str]]:
     first = True
     for number, line in _lines(path):
         where = f"{path}:{number}"
         fields = _split(line)
         if first:
             first = False
-            if _looks_like_header(fields, header_check):
+            if _looks_like_header(fields):
                 continue
         if len(fields) != 3:
             raise FormatError(f"{where}: expected 3 fields, found {len(fields)}")
         yield where, fields[0], fields[1], fields[2]
 
 
-def _looks_like_header(fields: list[str], header_check: str) -> bool:
+def _looks_like_header(fields: list[str]) -> bool:
+    """The first line is a header only when its third field is not a number at all.
+
+    The data rows accept ``1``, ``1.0`` and ``2.5e-3``, so the same test decides here; a
+    line such as ``q1  d1  1.0`` is data, not a header.
+    """
     if len(fields) != 3:
         return False
     try:
-        int(fields[2]) if header_check == "int" else float(fields[2])
+        float(fields[2])
     except ValueError:
         return True
     return False
@@ -148,7 +153,7 @@ def read_qrels(path: str | Path, fmt: str = "auto") -> Qrels:
     if fmt == "trec":
         rows = _trec_qrels_rows(path)
     elif fmt == "tsv":
-        rows = _tsv_rows(path, header_check="int")
+        rows = _tsv_rows(path)
     else:
         rows = _jsonl_rows(path)
 
@@ -200,7 +205,7 @@ def read_run(path: str | Path, fmt: str = "auto") -> Run:
     if fmt == "trec":
         rows = _trec_run_rows(path)
     elif fmt == "tsv":
-        rows = _tsv_rows(path, header_check="float")
+        rows = _tsv_rows(path)
     else:
         rows = _jsonl_rows(path)
 

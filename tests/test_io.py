@@ -98,3 +98,11 @@ def test_write_then_read_round_trip(tmp_path):
     lines = path.read_text().splitlines()
     assert lines[0].split()[2] == "c"
     assert lines[0].split()[5] == "bm25"
+
+
+def test_tsv_first_line_with_float_label_is_data(tmp_path):
+    # A first line whose label is written 1.0 used to be taken for a header and dropped.
+    path = write(tmp_path, "qrels.tsv", "q1\td1\t1.0\nq1\td2\t1.0\nq2\td3\t1.0\n")
+    assert read_qrels(path) == {"q1": {"d1": 1, "d2": 1}, "q2": {"d3": 1}}
+    run = write(tmp_path, "run.tsv", "q1\td1\t2.5e-3\nq1\td2\t1\n")
+    assert read_run(run) == {"q1": {"d1": 0.0025, "d2": 1.0}}
