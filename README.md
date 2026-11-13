@@ -211,8 +211,6 @@ retrievalstats table $D/qrels/test.tsv runs/bm25-title-k0.9-b0.4.txt runs/bm25-t
     runs/bm25-text-k0.9-b0.4.txt -m ndcg@10,ndcg_exp@10,map,mrr,P@10,recall@100,rprec,bpref,success@1,judged@10
 ```
 
-Building the three runs took about 11 seconds here.
-
 | run | ndcg@10 | ndcg_exp@10 | map | mrr | P@10 | recall@100 | rprec | bpref | success@1 | judged@10 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | bm25-title-k0.9-b0.4.txt | 0.6618 | 0.6618 | 0.6240 | 0.6348 | 0.0860 | 0.8852 | 0.5415 | 0.9650 | 0.5433 | 0.0860 |
