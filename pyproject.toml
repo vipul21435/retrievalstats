@@ -21,10 +21,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Text Processing :: Indexing",
 ]
-dependencies = []
+dependencies = ["numpy>=1.22", "scipy>=1.9"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7", "pytest-cov>=4", "ruff>=0.5"]
+dev = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "ruff>=0.5",
+    "pytrec-eval-terrier>=0.5.6",
+    "ir-measures>=0.3.1",
+    "statsmodels>=0.13",
+]
 
 [project.scripts]
 retrievalstats = "retrievalstats.cli:main"
