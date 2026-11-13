@@ -11,3 +11,5 @@ coverage.xml
 htmlcov/
 uv.lock
 .DS_Store
+data/
+runs/
