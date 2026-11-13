@@ -54,6 +54,23 @@ def test_bpref_skips_unjudged_and_handles_no_nonrelevant():
     assert score("bpref", ranking=["x", "a", "y", "b"], judgments=judgments)["bpref"] == 1.0
 
 
+def test_negative_labels_are_skipped_by_bpref_and_counted_by_judged():
+    # Same numbers pytrec_eval gives: a negative label behaves like a missing judgment in
+    # bpref, and like a non-relevant document with gain 0 elsewhere.
+    judgments = {"a": -1, "b": 1, "c": 0, "d": 2, "e": -2}
+    ranking = ["a", "b", "c", "e", "d", "x"]
+    got = score("bpref", "map", "P@5", "judged@6", ranking=ranking, judgments=judgments)
+    assert got["bpref"] == 0.5
+    assert got["map"] == pytest.approx((1 / 2 + 2 / 5) / 2)
+    assert got["P@5"] == 2 / 5
+    assert got["judged@6"] == pytest.approx(5 / 6)
+
+
+def test_relevance_level_must_be_positive():
+    with pytest.raises(ValueError):
+        evaluate({"q": {"a": 1}}, {"q": {"a": 1.0}}, ["P@1"], relevance_level=0)
+
+
 def test_judged():
     got = score("judged@2", "judged@5", "judged@10")
     assert got["judged@2"] == 1.0

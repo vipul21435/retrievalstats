@@ -7,12 +7,16 @@ Conventions (the defaults follow trec_eval):
   rules are ascending document id (``ties="docno"``) and the order in the input file
   (``ties="input"``). The rank column of a TREC run is never used.
 * Relevance. A judged document is relevant when its label is at least
-  ``relevance_level`` (default 1). Labels below that, including negative ones, are judged
-  non-relevant. A document missing from the qrels is unjudged and counts as non-relevant
-  everywhere except bpref, which skips it, and judged@k, which counts it as unjudged.
+  ``relevance_level`` (default 1). Labels from 0 up to that are judged non-relevant. A
+  document missing from the qrels is unjudged and counts as non-relevant everywhere except
+  bpref, which skips it, and judged@k, which counts it as unjudged.
+* Negative labels. bpref skips them, as if the document were not in the qrels (this is
+  what trec_eval and pytrec_eval do); every other trec_eval measure treats them as
+  non-relevant with gain 0, which gives the same numbers. judged@k counts them as judged,
+  as ir_measures' ``Judged`` does.
 * Cut-offs. ``P@k`` divides by ``k`` even when fewer than ``k`` documents were
   retrieved, as trec_eval does. ``judged@k`` divides by the number of documents actually
-  retrieved in the top ``k``.
+  retrieved in the top ``k`` (as ir_measures does) and is 0 for an empty ranking.
 * Gains for nDCG. ``ndcg`` uses the label as the gain (trec_eval's default, from
   Jarvelin and Kekalainen 2002); ``ndcg_exp`` uses ``2**label - 1``. Negative labels have
   gain 0. The discount is ``log2(rank + 1)``. The ideal ranking sorts every judged
@@ -210,16 +214,16 @@ def _bpref(
 
     For each relevant document retrieved, subtract the share of judged non-relevant
     documents ranked above it, where both counts are capped at R (the number of relevant
-    documents). Unjudged documents are skipped.
+    documents). Unjudged documents and negative labels are skipped.
     """
     if not num_rel:
         return 0.0
-    num_nonrel = len(judgments) - num_rel
+    num_nonrel = sum(1 for label in judgments.values() if 0 <= label < relevance_level)
     cap = min(num_nonrel, num_rel)
     nonrel_above = 0
     total = 0.0
     for label in labels:
-        if label is None:
+        if label is None or label < 0:
             continue
         if label >= relevance_level:
             total += 1.0 - min(nonrel_above, num_rel) / cap if nonrel_above else 1.0
@@ -276,6 +280,8 @@ def evaluate(
         raise ValueError(f"unknown rule for missing queries {missing!r}; use {MISSING_RULES}")
     if no_relevant not in NO_RELEVANT_RULES:
         raise ValueError(f"unknown rule {no_relevant!r}; use {NO_RELEVANT_RULES}")
+    if relevance_level < 1:
+        raise ValueError("relevance_level must be at least 1")
     parsed = [m if isinstance(m, Measure) else parse_measure(m) for m in measures]
     names = [str(m) for m in parsed]
 
