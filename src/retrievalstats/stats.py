@@ -75,6 +75,7 @@ def randomisation(
     ``samples`` random patterns are drawn and the observed pattern is counted as one of
     them, ``p = (count + 1) / (samples + 1)``. Returns ``(mean, p, exact)``.
     """
+    _check_samples(samples)
     arr = _array(d)
     observed = arr.mean() if arr.size else 0.0
     nonzero = arr[arr != 0]
@@ -123,6 +124,9 @@ def bootstrap(
     and compared with the observed mean, ``p = (count + 1) / (samples + 1)``. The interval
     is the percentile interval of the bootstrap means. Returns ``(mean, p, interval)``.
     """
+    _check_samples(samples)
+    if not 0 < confidence < 1:
+        raise ValueError(f"confidence must lie strictly between 0 and 1, got {confidence}")
     arr = _array(d)
     if arr.size == 0:
         return 0.0, 1.0, (0.0, 0.0)
@@ -171,16 +175,32 @@ def win_tie_loss(d: Sequence[float], threshold: float = 0.0) -> tuple[int, int, 
 
 def t_power(delta: float, sd: float, n: int, alpha: float = 0.05) -> float:
     """Power of the two-sided paired t-test to detect a true mean difference ``delta``."""
+    _check_alpha(alpha)
     if n < 2 or sd <= 0:
         return 1.0 if delta else alpha
     df = n - 1
     crit = sps.t.ppf(1 - alpha / 2, df)
-    nc = delta * math.sqrt(n) / sd
-    value = sps.nct.sf(crit, df, nc) + sps.nct.cdf(-crit, df, nc)
-    if not math.isfinite(value):
-        # scipy's noncentral t can fail far in the tail; the normal limit is accurate there.
-        value = sps.norm.sf(crit - nc) + sps.norm.cdf(-crit - nc)
-    return float(min(1.0, value))
+    nc = abs(delta) * math.sqrt(n) / sd
+    upper = sps.nct.sf(crit, df, nc)
+    lower = sps.nct.cdf(-crit, df, nc)
+    if not math.isfinite(lower):
+        # scipy returns NaN for this far tail at small df; it is smaller than the upper
+        # tail by many orders of magnitude, so it is dropped rather than approximated.
+        lower = 0.0
+    if not math.isfinite(upper):
+        # Very large noncentrality: the normal limit is accurate there.
+        upper = sps.norm.sf(crit - nc)
+    return float(min(1.0, upper + lower))
+
+
+def _check_alpha(alpha: float) -> None:
+    if not 0 < alpha < 1:
+        raise ValueError(f"alpha must lie strictly between 0 and 1, got {alpha}")
+
+
+def _check_samples(samples: int) -> None:
+    if samples < 1:
+        raise ValueError(f"samples must be at least 1, got {samples}")
 
 
 def minimum_detectable_difference(
@@ -189,8 +209,13 @@ def minimum_detectable_difference(
     """Smallest true mean difference the paired t-test detects with the given power.
 
     Uses the observed standard deviation of the differences and the noncentral t
-    distribution, solving ``t_power(delta) = power`` for ``delta``.
+    distribution, solving ``t_power(delta) = power`` for ``delta``. Returns ``inf`` for
+    fewer than two differences, or when no delta up to 2**60 standard deviations reaches
+    the power.
     """
+    _check_alpha(alpha)
+    if not alpha < power < 1:
+        raise ValueError(f"power must lie between alpha and 1, got {power}")
     arr = _array(d)
     n = arr.size
     if n < 2:
@@ -199,8 +224,12 @@ def minimum_detectable_difference(
     if sd == 0:
         return 0.0
     upper = sd
-    while t_power(upper, sd, n, alpha) < power:
+    for _ in range(60):
+        if t_power(upper, sd, n, alpha) >= power:
+            break
         upper *= 2
+    else:
+        return math.inf
     return float(optimize.brentq(lambda x: t_power(x, sd, n, alpha) - power, 0.0, upper))
 
 
@@ -277,6 +306,8 @@ def paired_comparison(
     tie_threshold: float = 0.0,
 ) -> PairedResult:
     """Run every requested test on the per-query scores ``a`` and ``b`` of one measure."""
+    _check_samples(samples)
+    _check_alpha(1 - confidence)
     for test in tests:
         if test not in TESTS:
             raise ValueError(f"unknown test {test!r}; choose from {TESTS}")

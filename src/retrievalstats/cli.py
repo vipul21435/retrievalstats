@@ -78,6 +78,20 @@ def _add_evaluation_options(parser: argparse.ArgumentParser, defaults: Sequence[
     parser.add_argument("--digits", type=int, default=4, help="decimals in Markdown output")
 
 
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {value}")
+    return value
+
+
+def _probability(text: str) -> float:
+    value = float(text)
+    if not 0 < value < 1:
+        raise argparse.ArgumentTypeError(f"must lie strictly between 0 and 1, got {value}")
+    return value
+
+
 def _add_test_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--correction",
@@ -87,12 +101,14 @@ def _add_test_options(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--samples",
-        type=int,
+        type=_positive_int,
         default=10_000,
         help="random sign patterns and bootstrap resamples (default: 10000)",
     )
     parser.add_argument("--seed", type=int, default=0, help="random seed (default: 0)")
-    parser.add_argument("--alpha", type=float, default=0.05, help="significance level")
+    parser.add_argument(
+        "--alpha", type=_probability, default=0.05, help="significance level (default: 0.05)"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -206,3 +206,33 @@ def test_paired_comparison_and_correction():
         paired_comparison("m", a, b, tests=["z"])
     with pytest.raises(ValueError):
         paired_comparison("m", a, b[:-1])
+
+
+def test_mdd_for_two_queries_matches_simulation():
+    # scipy's noncentral t gives NaN for the lower tail at df = 1, which once sent the
+    # power to a poor normal approximation (and makes statsmodels' solve_power stop early).
+    # Check the power at the MDD by simulating the t statistic directly.
+    d = [0.3, -0.5]
+    sd = float(np.std(d, ddof=1))
+    mdd = minimum_detectable_difference(d)
+    assert math.isfinite(t_power(mdd, sd, 2))
+    rng = np.random.default_rng(0)
+    nc = mdd * math.sqrt(2) / sd
+    t = (rng.standard_normal(400_000) + nc) / np.sqrt(rng.chisquare(1, 400_000))
+    simulated = np.mean(np.abs(t) > sps.t.ppf(0.975, 1))
+    assert simulated == pytest.approx(0.8, abs=0.005)
+
+
+def test_bad_alpha_and_samples_are_rejected():
+    with pytest.raises(ValueError):
+        minimum_detectable_difference([0.1, 0.2, 0.3], alpha=0.0)
+    with pytest.raises(ValueError):
+        minimum_detectable_difference([0.1, 0.2, 0.3], power=0.01)
+    with pytest.raises(ValueError):
+        randomisation([0.1, 0.2], samples=0)
+    with pytest.raises(ValueError):
+        bootstrap([0.1, 0.2], samples=0)
+    with pytest.raises(ValueError):
+        bootstrap([0.1, 0.2], confidence=1.0)
+    with pytest.raises(ValueError):
+        paired_comparison("m", [0.1, 0.2], [0.2, 0.3], confidence=1.0)

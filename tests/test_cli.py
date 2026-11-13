@@ -124,3 +124,11 @@ def test_bm25_command(tmp_path, capsys):
     assert out.read_text().split()[:3] == ["1", "Q0", "d1"]
     assert main(["score", str(qrels), str(out), "-m", "mrr", "--format", "json"]) == 0
     assert json.loads(capsys.readouterr().out)["mean"]["mrr"] == 1.0
+
+
+@pytest.mark.parametrize("option", [["--alpha", "0"], ["--alpha", "1.5"], ["--samples", "0"]])
+def test_compare_rejects_bad_alpha_and_samples(option, capsys):
+    with pytest.raises(SystemExit) as stop:
+        main(["compare", QRELS, RUN_A, RUN_B, *option])
+    assert stop.value.code == 2
+    assert "must" in capsys.readouterr().err
