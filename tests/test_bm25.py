@@ -78,3 +78,12 @@ def test_read_beir_files(tmp_path):
     tsv.write_text("7\tcat?\n8\tdog\n")
     assert read_queries(tsv) == {"7": "cat?", "8": "dog"}
     assert read_corpus(tsv) == {"7": "cat?", "8": "dog"}
+
+
+def test_byte_order_mark_is_skipped(tmp_path):
+    corpus = tmp_path / "corpus.jsonl"
+    corpus.write_text("﻿" + json.dumps({"_id": "1", "title": "", "text": "cat"}) + "\n")
+    assert read_corpus(corpus) == {"1": "cat"}
+    tsv = tmp_path / "queries.tsv"
+    tsv.write_text("﻿7\tcat\n")
+    assert read_queries(tsv) == {"7": "cat"}

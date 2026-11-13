@@ -117,7 +117,7 @@ class BM25:
 
 
 def _jsonl(path: Path) -> Iterable[dict]:
-    with path.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8-sig") as handle:
         for line in handle:
             if line.strip():
                 yield json.loads(line)
@@ -145,7 +145,7 @@ def read_queries(path: str | Path) -> dict[str, str]:
 
 def _read_tsv(path: Path) -> dict[str, str]:
     out = {}
-    with path.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8-sig") as handle:
         for line in handle:
             line = line.rstrip("\n")
             if line:

@@ -35,7 +35,7 @@ class FormatError(ValueError):
 
 
 def _lines(path: Path) -> Iterator[tuple[int, str]]:
-    with path.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8-sig") as handle:
         for number, raw in enumerate(handle, start=1):
             line = raw.strip()
             if line and not line.startswith("#"):
@@ -220,7 +220,7 @@ def read_run(path: str | Path, fmt: str = "auto") -> Run:
 
 def _read_json_run(path: Path) -> Run:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise FormatError(f"{path}: {exc.msg}") from None
     if not isinstance(data, dict):

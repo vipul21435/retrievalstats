@@ -106,3 +106,10 @@ def test_tsv_first_line_with_float_label_is_data(tmp_path):
     assert read_qrels(path) == {"q1": {"d1": 1, "d2": 1}, "q2": {"d3": 1}}
     run = write(tmp_path, "run.tsv", "q1\td1\t2.5e-3\nq1\td2\t1\n")
     assert read_run(run) == {"q1": {"d1": 0.0025, "d2": 1.0}}
+
+
+def test_byte_order_mark_is_not_part_of_the_first_id(tmp_path):
+    bom = "﻿"
+    assert read_qrels(write(tmp_path, "q.txt", bom + "q1 0 d1 1\n")) == {"q1": {"d1": 1}}
+    assert read_run(write(tmp_path, "r.txt", bom + "q1 Q0 d1 1 1.0 t\n")) == {"q1": {"d1": 1.0}}
+    assert read_run(write(tmp_path, "r.json", bom + '{"q1": {"d1": 1}}')) == {"q1": {"d1": 1.0}}
