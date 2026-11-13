@@ -5,7 +5,9 @@ Conventions (the defaults follow trec_eval):
 * Ranking. Documents are ordered by descending score. Tied scores are broken by
   descending document id, the rule trec_eval applies (``ties="trec_eval"``). The other
   rules are ascending document id (``ties="docno"``) and the order in the input file
-  (``ties="input"``). The rank column of a TREC run is never used.
+  (``ties="input"``). The rank column of a TREC run is never used. Under the trec_eval
+  rule scores are compared as 32-bit floats, as pytrec_eval does, so scores that differ
+  only beyond about seven significant digits tie.
 * Relevance. A judged document is relevant when its label is at least
   ``relevance_level`` (default 1). Labels from 0 up to that are judged non-relevant. A
   document missing from the qrels is unjudged and counts as non-relevant everywhere except
@@ -34,6 +36,8 @@ import math
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+
+import numpy as np
 
 TIE_RULES = ("trec_eval", "docno", "input")
 MISSING_RULES = ("skip", "zero")
@@ -123,11 +127,18 @@ def parse_measures(texts: Iterable[str]) -> list[Measure]:
 
 
 def rank(scores: Mapping[str, float], ties: str = "trec_eval") -> list[str]:
-    """Order document ids by descending score, breaking ties by ``ties``."""
+    """Order document ids by descending score, breaking ties by ``ties``.
+
+    Under ``ties="trec_eval"`` scores are compared after rounding to 32-bit floats, as
+    pytrec_eval does, so ``1.0`` and ``1.000000001`` tie. The other rules compare the
+    scores at full 64-bit precision.
+    """
     if ties not in TIE_RULES:
         raise ValueError(f"unknown tie rule {ties!r}; choose from {TIE_RULES}")
     items = list(scores.items())
     if ties == "trec_eval":
+        rounded = np.asarray([score for _, score in items], dtype=np.float32).tolist()
+        items = list(zip((doc for doc, _ in items), rounded, strict=True))
         items.sort(key=lambda item: item[0], reverse=True)
     elif ties == "docno":
         items.sort(key=lambda item: item[0])

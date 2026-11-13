@@ -114,7 +114,10 @@ The conventions, each a flag, with defaults that follow trec_eval:
   id, the rule trec_eval and pytrec_eval apply (`trec_eval`, default; the agreement tests below use runs
   full of ties). The alternatives are ascending id (`docno`) and file order (`input`). The rank column of
   a TREC run is never read. For a query whose one relevant document ties with an unjudged one, the rule
-  alone moves MRR between 0.5 and 1.0 (`tests/test_metrics.py::test_ties_change_the_score`).
+  alone moves MRR between 0.5 and 1.0 (`tests/test_metrics.py::test_ties_change_the_score`). Under the
+  `trec_eval` rule scores are compared as 32-bit floats, as pytrec_eval does: 1.0 and 1.000000001 tie,
+  so a relevant document scored 1.000000001 next to a non-relevant one scored 1.0 gets MRR 0.5 when the
+  non-relevant document has the larger id. `docno` and `input` compare the full 64-bit scores.
 - `--missing`: a query in the qrels with no line in the run is skipped (`skip`, default) or scores 0 on
   every measure (`zero`, trec_eval's `-c`). Queries only in the run are always ignored.
 - `--no-relevant`: a query whose judgments contain no relevant document is kept and scores 0 (`keep`,
@@ -270,6 +273,9 @@ Urbano et al.'s finding that the sign and Wilcoxon tests are unreliable for hypo
 - The bootstrap-shift p-value is too small on small samples (Urbano et al. 2019); on the four-query example
   it reports 0.0031 for nDCG@5 where the exact randomisation test gives 0.25.
 - The MDD assumes the paired t-test and treats the observed sd(d) as the true one.
+- Under the default tie rule, scores closer than 32-bit precision count as tied (as in pytrec_eval), so
+  runs written with 17 significant digits, as `bm25` writes them, can score differently under `--ties
+  docno` or `--ties input` even when no two scores are exactly equal.
 - BM25 is a small in-memory implementation without stemming or stopwords, run only on SciFact here; it is
   for building example runs, not a search engine.
 - The random agreement tests cover cut-offs 1, 3, 5, 10 and 20 and labels 0 to 3; the real-data check covers

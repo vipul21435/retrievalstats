@@ -123,3 +123,32 @@ def test_judged_on_tied_runs_matches_ir_measures_with_docno_ties(seed):
     for qid, scores in ours.per_query.items():
         for name, value in scores.items():
             assert value == pytest.approx(ref[(qid, name)], abs=1e-12), (qid, name)
+
+
+def test_trec_eval_rule_compares_scores_as_float32():
+    # pytrec_eval ranks 1.0 and 1.000000001 as tied (equal in 32 bits), so the tie goes
+    # to the larger document id.
+    qrels = {"q": {"a": 1, "b": 0}}
+    run = {"q": {"b": 1.0, "a": 1.000000001}}
+    ref = trec_eval_scores(qrels, run, ["recip_rank"])["q"]["recip_rank"]
+    assert ref == 0.5
+    assert evaluate(qrels, run, ["mrr"]).mean()["mrr"] == ref
+    # The other rules keep full precision.
+    assert evaluate(qrels, run, ["mrr"], ties="docno").mean()["mrr"] == 1.0
+
+
+@pytest.mark.parametrize("seed", range(3))
+def test_near_ties_match_trec_eval(seed):
+    rng = random.Random(seed)
+    qrels, run = random_collection(seed)
+    run = {
+        q: {d: s + rng.choice([0.0, 1e-9, 2e-9, 1e-3]) for d, s in docs.items()}
+        for q, docs in run.items()
+    }
+    names = {"mrr": "recip_rank", "map": "map", "ndcg@5": "ndcg_cut_5", "P@3": "P_3"}
+    ours = evaluate(qrels, run, list(names))
+    ref = trec_eval_scores(qrels, run, names.values())
+    for qid in ours.per_query:
+        if qid in ref:
+            for name, trec_name in names.items():
+                assert ours.per_query[qid][name] == pytest.approx(ref[qid][trec_name], abs=1e-12)
