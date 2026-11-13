@@ -75,10 +75,12 @@ Largest per-query differences on ndcg@5:
 
 judged@10: A 0.658, B 0.804
 warning: judged@10 differs: run_a.txt 0.658, run_b.txt 0.804. Unjudged documents count as non-relevant, so the comparison is biased against run_a.txt relative to run_b.txt.
+warning: only 4 paired queries: below 30 the bootstrap p-value is too small and its interval too narrow (it rejected a true null in 16 % of simulated samples at n = 5 and 10 % at n = 10); rely on the t or randomisation test.
 ```
 
-With four queries no test finds a difference, and the minimum detectable difference (MDD) says why: at
-this variance a true gain below about 0.35 nDCG@5 would usually be missed. The other commands are
+With four queries neither test finds a difference, and the minimum detectable difference (MDD) says why:
+at this variance a true gain of 0.35 nDCG@5 would be detected in 80 % of samples, and smaller gains less
+often. The other commands are
 `retrievalstats table QRELS RUN...` (one row per run, each tested against the first) and
 `retrievalstats bm25 CORPUS QUERIES -o RUN`. Every command except `bm25` takes `--format json`.
 `python examples/compare_runs.py` does the same through the Python API.
