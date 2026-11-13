@@ -21,7 +21,9 @@ for k in CUTOFFS:
     TREC_NAMES[f"success@{k}"] = f"success_{k}"
 
 
-def random_collection(seed, n_queries=40, negative=True):
+def random_collection(seed, n_queries=40, negative=False):
+    # pytrec-eval-terrier 0.5.11 crashes (segmentation fault) at random on qrels with
+    # negative labels, so only the ir_measures comparison uses them.
     rng = random.Random(seed)
     labels = [0, 0, 0, 1, 1, 2, 3] + ([-1, -2] if negative else [])
     qrels, run = {}, {}
@@ -65,7 +67,7 @@ def test_every_trec_eval_measure_matches(seed):
 def test_exponential_gain_matches_trec_eval_on_mapped_labels(seed):
     # trec_eval uses the label as the gain, so mapping each label l > 0 to 2**l - 1 turns
     # its ndcg into the exponential-gain variant.
-    qrels, run = random_collection(seed, negative=False)
+    qrels, run = random_collection(seed)
     mapped = {q: {d: (2**v - 1 if v > 0 else v) for d, v in j.items()} for q, j in qrels.items()}
     names = {"ndcg_exp": "ndcg", "ndcg_exp@5": "ndcg_cut_5", "ndcg_exp@10": "ndcg_cut_10"}
     ours = evaluate(qrels, run, list(names))
@@ -78,7 +80,7 @@ def test_exponential_gain_matches_trec_eval_on_mapped_labels(seed):
 
 @pytest.mark.parametrize("seed", range(3))
 def test_judged_matches_ir_measures(seed):
-    qrels, run = random_collection(seed)
+    qrels, run = random_collection(seed, negative=True)
     run = {q: d for q, d in run.items() if d}
     measures = [ir_measures.Judged @ k for k in CUTOFFS]
     # ir_measures orders tied documents its own way; judged@k depends on the order only at
