@@ -257,10 +257,17 @@ The same command with `runs/bm25-title-k1.2-b0.75.txt` as B (other k1 and b) sho
 | ndcg@10 | +0.0016 | 32/257/11 | 0.7432 (1.0000) | 0.0917 (0.2750) | 0.0019 (0.0057)* | 0.7482 (1.0000) | 0.7441 (1.0000) |
 | map | -0.0005 | 66/206/28 | 0.9413 (1.0000) | 0.0013 (0.0063)* | 0.0001 (0.0006)* | 0.9384 (1.0000) | 0.9359 (1.0000) |
 | mrr | +0.0003 | 58/215/27 | 0.9664 (1.0000) | 0.0068 (0.0272)* | 0.0010 (0.0041)* | 0.9689 (1.0000) | 0.9652 (1.0000) |
+| P@10 | +0.0010 | 3/297/0 | 0.0833 (0.4163) | 0.1025 (0.2750) | 0.2500 (0.5000) | 0.2500 (1.0000) | 0.0812 (0.4060) |
+| recall@100 | -0.0027 | 1/298/1 | 0.4337 (1.0000) | 0.6547 (0.6547) | 1.0000 (1.0000) | 1.0000 (1.0000) | 0.4735 (1.0000) |
 
 The mean differences are near zero, but the second setting wins more queries by small margins and loses
 fewer by larger ones, so the sign and Wilcoxon tests reject while the tests of the mean do not. This matches
 Urbano et al.'s finding that the sign and Wilcoxon tests are unreliable for hypotheses about the mean.
+
+Both commands also print `warning: judged@10 is below 0.5 for at least one run`: judged@10 lies between 0.084 and 0.087
+for every run here, because SciFact judges one or two documents per query. On a collection with such sparse
+judgments that warning always fires, and it says the absolute scores are lower bounds, not that the
+comparison is unfair (the two runs' judged@10 differ by at most 0.002).
 
 ## Limitations
 
