@@ -193,6 +193,8 @@ def table_markdown(table: Table, *, digits: int = 4, alpha: float = 0.05) -> str
             cells.append(f"{table.means[name][m]:.{digits}f}{mark}")
         rows.append(cells)
     lines.append(markdown_table(["run", *table.measures], rows, "l" + "r" * len(table.measures)))
+    for warning in table.warnings:
+        lines.append(f"warning: {warning}")
     return "\n".join(lines)
 
 

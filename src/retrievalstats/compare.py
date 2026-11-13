@@ -168,6 +168,7 @@ class Table:
     p_values: dict[str, dict[str, float]]
     adjusted: dict[str, dict[str, float]]
     queries: int
+    warnings: list[str] = field(default_factory=list)
 
 
 def run_table(
@@ -201,13 +202,20 @@ def run_table(
         name: evaluate(qrels, run, parsed, **evaluate_options)  # type: ignore[arg-type]
         for name, run in runs.items()
     }
-    common = [
-        q
-        for q in evaluations[baseline].per_query
-        if all(q in e.per_query for e in evaluations.values())
-    ]
+    scored_somewhere: dict[str, None] = {}
+    for e in evaluations.values():
+        scored_somewhere.update(dict.fromkeys(e.per_query))
+    common = [q for q in scored_somewhere if all(q in e.per_query for e in evaluations.values())]
     if not common:
         raise ValueError("the runs have no scored query in common")
+    warnings = []
+    left_out = len(scored_somewhere) - len(common)
+    if left_out:
+        counts = ", ".join(f"{name} {len(e.per_query)}" for name, e in evaluations.items())
+        warnings.append(
+            f"{left_out} queries were scored for some runs only and are left out of every mean "
+            f"and test (queries scored: {counts}); use --missing zero to score them 0 instead."
+        )
     labels = [str(m) for m in parsed]
     means = {
         name: {m: sum(e.per_query[q][m] for q in common) / len(common) for m in labels}
@@ -231,4 +239,6 @@ def run_table(
     for (name, m), p, q in zip(keys, raw, adjusted_list, strict=True):
         p_values.setdefault(name, {})[m] = p
         adjusted.setdefault(name, {})[m] = q
-    return Table(names, labels, means, baseline, test, correction, p_values, adjusted, len(common))
+    return Table(
+        names, labels, means, baseline, test, correction, p_values, adjusted, len(common), warnings
+    )

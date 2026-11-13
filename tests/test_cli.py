@@ -137,3 +137,15 @@ def test_compare_rejects_bad_alpha_and_samples(option, capsys):
 def test_compare_warns_about_small_samples(capsys):
     assert main(["compare", QRELS, RUN_A, RUN_B, "-m", "map", "--samples", "500"]) == 0
     assert "warning: only 4 paired queries" in capsys.readouterr().out
+
+
+def test_table_warns_about_queries_left_out(tmp_path, capsys):
+    short = tmp_path / "short.txt"
+    short.write_text("q1 Q0 doc01 1 2.0 s\n")
+    assert main(["table", QRELS, RUN_A, str(short), "-m", "map"]) == 0
+    out = capsys.readouterr().out
+    assert "queries: 1" in out
+    assert "warning: 3 queries were scored for some runs only" in out
+    assert main(["table", QRELS, RUN_A, str(short), "-m", "map", "--format", "json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["warnings"] and "run_a.txt 4" in payload["warnings"][0]
