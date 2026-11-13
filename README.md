@@ -270,8 +270,24 @@ Urbano et al.'s finding that the sign and Wilcoxon tests are unreliable for hypo
   crashes on them.
 - Corrections are Holm and Benjamini-Hochberg only; there is no Tukey HSD or other procedure that models all
   pairs of systems jointly.
-- The bootstrap-shift p-value is too small on small samples (Urbano et al. 2019); on the four-query example
-  it reports 0.0031 for nDCG@5 where the exact randomisation test gives 0.25.
+- On small samples the bootstrap-shift p-value is too small (Urbano et al. 2019) and the percentile
+  interval, printed by default, is too narrow. On the four-query example the bootstrap gives p = 0.0031 for
+  nDCG@5 where the exact randomisation test gives 0.25, and the interval [+0.0655, +0.3288] where the t
+  interval is [-0.0683, +0.4625]. `compare` prints a warning below 30 paired queries. Share of p-values
+  below 0.05 when the true mean difference is 0, from `python scripts/null_rejection.py` (1,000 seeded
+  samples per row, 2,000 resamples or sign patterns each; "skewed" draws exponential minus 1):
+
+  | null | n | t | randomisation | bootstrap |
+  | --- | ---: | ---: | ---: | ---: |
+  | normal | 5 | 0.055 | 0.000 | 0.164 |
+  | normal | 10 | 0.045 | 0.042 | 0.099 |
+  | normal | 30 | 0.044 | 0.044 | 0.053 |
+  | skewed | 5 | 0.116 | 0.000 | 0.235 |
+  | skewed | 10 | 0.092 | 0.086 | 0.141 |
+  | skewed | 30 | 0.089 | 0.086 | 0.103 |
+
+  At n = 5 the randomisation test enumerates all 32 sign patterns, so its smallest p is 2/32 and it never
+  rejects at 0.05. Under the skewed null even the tests of the mean reject well above 5 % at these sizes.
 - The MDD assumes the paired t-test and treats the observed sd(d) as the true one.
 - Under the default tie rule, scores closer than 32-bit precision count as tied (as in pytrec_eval), so
   runs written with 17 significant digits, as `bm25` writes them, can score differently under `--ties

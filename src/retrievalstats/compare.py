@@ -9,6 +9,7 @@ from .metrics import Evaluation, Measure, evaluate, parse_measures
 from .stats import CORRECTIONS, TESTS, PairedResult, adjust, correct, paired_comparison
 
 Qrels = Mapping[str, Mapping[str, int]]
+SMALL_SAMPLE = 30
 Run = Mapping[str, Mapping[str, float]]
 
 
@@ -127,6 +128,12 @@ def compare_runs(
     judged_a = sum(eval_a.per_query[q][judged] for q in queries) / len(queries)
     judged_b = sum(eval_b.per_query[q][judged] for q in queries) / len(queries)
     warnings = judged_warnings(names[0], judged_a, names[1], judged_b, judged_k, judged_gap)
+    if len(queries) < SMALL_SAMPLE:
+        warnings.append(
+            f"only {len(queries)} paired queries: below {SMALL_SAMPLE} the bootstrap p-value is "
+            "too small and its interval too narrow (it rejected a true null in 16 % of simulated "
+            "samples at n = 5 and 10 % at n = 10); rely on the t or randomisation test."
+        )
     if only_a or only_b:
         warnings.append(
             f"{len(only_a) + len(only_b)} queries were scored for one run only and are left out "

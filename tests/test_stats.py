@@ -236,3 +236,17 @@ def test_bad_alpha_and_samples_are_rejected():
         bootstrap([0.1, 0.2], confidence=1.0)
     with pytest.raises(ValueError):
         paired_comparison("m", [0.1, 0.2], [0.2, 0.3], confidence=1.0)
+
+
+def test_bootstrap_over_rejects_on_small_samples():
+    # Seeded record of a known defect: under a true null with n = 5 the bootstrap-shift
+    # test rejects far more often than 5 %, the t-test does not.
+    rng = np.random.default_rng(12345)
+    trials = 400
+    boot = t = 0
+    for i in range(trials):
+        d = rng.normal(0.0, 1.0, 5)
+        boot += bootstrap(d, samples=1000, seed=i)[1] < 0.05
+        t += paired_t(d)[1] < 0.05
+    assert boot / trials > 0.12
+    assert t / trials < 0.09

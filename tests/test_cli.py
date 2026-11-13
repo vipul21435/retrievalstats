@@ -132,3 +132,8 @@ def test_compare_rejects_bad_alpha_and_samples(option, capsys):
         main(["compare", QRELS, RUN_A, RUN_B, *option])
     assert stop.value.code == 2
     assert "must" in capsys.readouterr().err
+
+
+def test_compare_warns_about_small_samples(capsys):
+    assert main(["compare", QRELS, RUN_A, RUN_B, "-m", "map", "--samples", "500"]) == 0
+    assert "warning: only 4 paired queries" in capsys.readouterr().out
