@@ -106,3 +106,20 @@ def test_means_match_trec_eval_averages():
     pairs = {"map": "map", "ndcg@10": "ndcg_cut_10", "P@5": "P_5", "bpref": "bpref"}
     for name, trec_name in pairs.items():
         assert ours[name] == pytest.approx(sum(v[trec_name] for v in ref.values()) / n)
+
+
+@pytest.mark.parametrize("seed", range(3))
+def test_judged_on_tied_runs_matches_ir_measures_with_docno_ties(seed):
+    # ir_measures orders tied documents by ascending id, so on tied runs judged@k agrees
+    # with it under ties="docno" (the trec_eval rule orders them the other way).
+    qrels, run = random_collection(seed, negative=True)
+    run = {q: d for q, d in run.items() if d}
+    measures = [ir_measures.Judged @ k for k in CUTOFFS]
+    ref = {
+        (m.query_id, str(m.measure).replace("Judged", "judged")): m.value
+        for m in ir_measures.iter_calc(measures, qrels, run)
+    }
+    ours = evaluate(qrels, run, [f"judged@{k}" for k in CUTOFFS], ties="docno")
+    for qid, scores in ours.per_query.items():
+        for name, value in scores.items():
+            assert value == pytest.approx(ref[(qid, name)], abs=1e-12), (qid, name)

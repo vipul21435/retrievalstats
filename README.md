@@ -223,9 +223,11 @@ ranking.
 compares 11 measures (P@10, recall@100, map, map@100, mrr, ndcg, ndcg@10, rprec, bpref, success@1,
 success@10) per query on all three runs. In all 33 run and measure pairs the largest absolute per-query
 difference is at most 1.1e-16, so every metric agrees to four decimals and beyond. pytrec_eval has no
-judged@k and no exponential gain. `tests/test_reference.py` checks judged@k against ir_measures, and checks
-`ndcg_exp` against pytrec_eval's `ndcg` on qrels whose labels l are mapped to 2^l - 1, both on random runs
-with many tied scores.
+judged@k and no exponential gain. `tests/test_reference.py` checks `ndcg_exp` against pytrec_eval's `ndcg`
+on qrels whose labels l are mapped to 2^l - 1, on random runs with many tied scores. It checks judged@k
+against ir_measures on random runs with the ties removed, and on tied runs with `--ties docno`: ir_measures
+orders tied documents by ascending id, so on a tied run judged@k under the default trec_eval rule can differ
+from ir_measures' `Judged`.
 
 **Which differences are significant.** `retrievalstats compare $D/qrels/test.tsv runs/bm25-title-k0.9-b0.4.txt
 runs/bm25-text-k0.9-b0.4.txt -m ndcg@10,map,mrr,P@10,recall@100` (seed 0, 10,000 samples) tests the effect of
