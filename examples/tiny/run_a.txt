@@ -1,0 +1,16 @@
+q1 Q0 doc03 1 9.1 a
+q1 Q0 doc01 2 8.7 a
+q1 Q0 doc91 3 7.2 a
+q1 Q0 doc02 4 6.0 a
+q1 Q0 doc05 5 5.5 a
+q1 Q0 doc92 6 4.1 a
+q2 Q0 doc06 1 7.5 a
+q2 Q0 doc07 2 6.6 a
+q2 Q0 doc93 3 6.6 a
+q2 Q0 doc08 4 3.2 a
+q2 Q0 doc09 5 1.1 a
+q3 Q0 doc11 1 4.4 a
+q3 Q0 doc94 2 4.0 a
+q3 Q0 doc10 3 3.9 a
+q4 Q0 doc13 1 2.0 a
+q4 Q0 doc95 2 1.0 a
